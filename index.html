@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="preload" href="assets/tarot_el_sol.png" as="image">
+    <link rel="preload" href="assets/dandelion.png" as="image">
+    <title>La Crónica del Mar y el Viento</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Outfit:wght@300;400&display=swap');
+
+        :root {
+            --gold-primary: #d4af37;
+            --gold-secondary: #f9e27d;
+            --gold-dark: #8b6d1b;
+            --bg-dark: #050505;
+            --text-light: #f4f4f4;
+            --glass-bg: rgba(20, 20, 20, 0.85);
+            --glass-border: rgba(212, 175, 55, 0.3);
+            --purple-heart: #9b59b6;
+            --purple-glow: rgba(155, 89, 182, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Cormorant Garamond', serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- START SCREEN --- */
+        .start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1.5s ease, visibility 1.5s ease;
+        }
+
+        .start-btn {
+            background: transparent;
+            border: 2px solid var(--gold-primary);
+            color: var(--gold-primary);
+            padding: 1rem 3rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.2rem;
+            letter-spacing: 0.1rem;
+            cursor: pointer;
+            border-radius: 40px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+            animation: pulseText 2s infinite;
+        }
+
+        .start-btn:hover {
+            background: var(--gold-primary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+        }
+
+        /* --- BACKGROUND EFFECTS --- */
+        .canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a1505 0%, #050505 100%);
+        }
+
+        #starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: opacity 2s ease;
+        }
+
+        #dynamic-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 2s ease, background 2s ease;
+        }
+
+        /* Subtle Sea Pattern */
+        .bg-sea {
+            background: linear-gradient(to bottom, #001f3f, #000) !important;
+            opacity: 1 !important;
+        }
+        .bg-sea::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-radial-gradient(circle at 50% 150%, rgba(0, 100, 200, 0.05) 0%, transparent 10%, rgba(0, 100, 200, 0.05) 20%);
+            animation: waveFlow 20s linear infinite;
+        }
+
+        /* Subtle Storm Flashes */
+        .bg-storm {
+            background: linear-gradient(to bottom, #1a1a1a, #000) !important;
+            opacity: 1 !important;
+            animation: stormFlashes 10s infinite;
+        }
+
+        /* Subtle Sun Glow */
+        .bg-sun {
+            background: linear-gradient(to bottom, #2a1f00, #000) !important;
+            opacity: 1 !important;
+        }
+        .bg-sun::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%; width: 150vw; height: 150vw;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 60%);
+            animation: sunPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes waveFlow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes stormFlashes {
+            0%, 95%, 100% { filter: brightness(1); }
+            96% { filter: brightness(1.5); }
+            97% { filter: brightness(1); }
+            98% { filter: brightness(1.3); }
+            99% { filter: brightness(1); }
+        }
+
+        @keyframes sunPulse {
+            from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 1rem 6rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            animation: fadeInDown 1.5s ease-out;
+            margin-bottom: 0.5rem;
+            transition: opacity 0.5s ease;
+        }
+
+        .header-rune {
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--gold-primary);
+            font-size: 0.7rem;
+            letter-spacing: 0.4rem;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            color: var(--gold-primary);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            margin-bottom: 0.3rem;
+        }
+
+        /* --- THE MAGIC CARD (FLIP EFFECT) --- */
+        .card-perspective {
+            position: relative;
+            width: 280px;
+            height: 420px;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease, opacity 2s ease, filter 2s ease;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            box-shadow: 
+                0 0 40px rgba(212, 175, 55, 0.2),
+                0 10px 30px rgba(0, 0, 0, 0.5);
+            background: #111;
+            border: 2px solid var(--gold-primary);
+            overflow: hidden;
+        }
+
+        /* FRONT OF CARD */
+        .card-front {
+            z-index: 2;
+            transform: rotateY(0deg); /* Fix for some browsers */
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: filter 1s ease, opacity 1s ease;
+        }
+
+        .card-inner.locked .card-front img {
+            filter: grayscale(1) brightness(0.4);
+            opacity: 0.7;
+        }
+
+        .card-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
+            pointer-events: none;
+        }
+
+        /* BACK OF CARD (DANDELION) */
+        .card-back {
+            transform: rotateY(180deg);
+            z-index: 1;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .back-img-container {
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .back-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .wish-text-container {
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #0a0a0a;
+            border-top: 1px solid var(--gold-dark);
+        }
+
+        .wish-title {
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--gold-primary);
+            font-size: 1.3rem;
+            margin-bottom: 2px;
+        }
+
+        .wish-subtitle {
+            font-family: 'Outfit', sans-serif;
+            color: var(--gold-secondary);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulseText 1.5s infinite;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; text-shadow: 0 0 10px var(--gold-primary); }
+            100% { opacity: 0.6; }
+        }
+
+        /* Shatter/Vanish effect FOR ENTIRE CARD */
+        .shatter-card {
+            opacity: 0 !important;
+            filter: blur(20px) brightness(2) !important;
+            transform: scale(1.1) translateY(-30px) !important;
+            pointer-events: none;
+        }
+
+        /* Dandelion Seeds Container */
+        #seeds-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .seed {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff, 0 0 20px var(--gold-primary);
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* --- FINAL ENDING TEXT --- */
+        .final-ending-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+            z-index: 100;
+        }
+
+        .final-ending-box.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .hope-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 2rem;
+            color: var(--gold-primary);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+            margin-bottom: 2.5rem;
+            padding: 0 1rem;
+        }
+
+        .restart-btn {
+            background: transparent;
+            border: 1px solid var(--gold-primary);
+            color: var(--gold-primary);
+            padding: 0.8rem 2rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1rem;
+            letter-spacing: 0.1rem;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background: var(--gold-primary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        /* --- STORY CONTROLS --- */
+        .story-container {
+            max-width: 650px;
+            width: 95%;
+            padding: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            position: relative;
+        }
+
+        .story-text {
+            font-size: 1.25rem;
+            line-height: 1.7;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            min-height: 120px;
+            transition: opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btns {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--gold-primary);
+            color: var(--gold-primary);
+            padding: 0.6rem 1.5rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 0.8rem;
+            letter-spacing: 0.1rem;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--gold-primary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+            border-color: rgba(212, 175, 55, 0.3);
+            color: rgba(212, 175, 55, 0.5);
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: var(--gold-primary);
+            box-shadow: 0 0 10px var(--gold-primary);
+            transform: scale(1.3);
+        }
+
+        /* --- FINAL MESSAGE (PURPLE HEART) --- */
+        #final-message {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeInUp 1s ease forwards;
+            margin-top: 1rem;
+        }
+
+        .purple-heart-btn {
+            background: transparent;
+            border: 2px solid var(--purple-heart);
+            color: var(--text-light);
+            padding: 0.8rem 2rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.1rem;
+            letter-spacing: 0.1rem;
+            cursor: pointer;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulseHeart 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px var(--purple-glow);
+        }
+
+        .purple-heart-btn:hover {
+            background: var(--purple-heart);
+            box-shadow: 0 0 25px var(--purple-glow);
+            transform: scale(1.05);
+        }
+
+        .purple-heart-btn .heart-icon {
+            font-size: 1.5rem;
+        }
+
+        @keyframes pulseHeart {
+            0% { transform: scale(1); box-shadow: 0 0 10px var(--purple-glow); }
+            50% { transform: scale(1.08); box-shadow: 0 0 25px var(--purple-glow); }
+            100% { transform: scale(1); box-shadow: 0 0 10px var(--purple-glow); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MOBILE --- */
+        @media (max-width: 600px) {
+            .card-perspective { width: 220px; height: 330px; }
+            .story-container { padding: 1.5rem; min-height: 280px; }
+            .story-text { font-size: 1.1rem; min-height: 140px; }
+            .progress-dots { max-width: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- AUDIO PLAYER -->
+    <audio id="bgMusic" loop>
+        <source src="assets/music.webm" type="audio/webm">
+    </audio>
+
+    <div id="start-screen" class="start-screen">
+        <button class="start-btn" id="startBtn">Toca para abrir la carta ✨</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="starfield"></canvas>
+        <div id="dynamic-bg"></div>
+    </div>
+
+    <div id="seeds-layer"></div>
+
+    <div class="container" id="mainContainer">
+        <header id="mainHeader">
+            <div class="header-rune" id="chapter-title">Prólogo</div>
+            <h1 id="main-title-text">El Mar y el Viento</h1>
+        </header>
+
+        <div class="card-perspective" id="cardContainer">
+            <div class="card-inner locked" id="cardInner">
+                <div class="card-front">
+                    <img src="assets/tarot_el_sol.png" alt="Carta del Tarot El Sol" id="cardImage">
+                    <div class="card-overlay"></div>
+                </div>
+                <div class="card-back" id="cardBack">
+                    <div class="back-img-container">
+                        <img src="assets/dandelion.png" alt="Diente de León Mágico">
+                    </div>
+                    <div class="wish-text-container">
+                        <p class="wish-title">Pide un deseo</p>
+                        <p class="wish-subtitle">Tócame ✨</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="story-container" id="storyBox">
+            <div class="progress-dots" id="dots"></div>
+            <div class="story-text" id="story-text">
+                Cargando la historia...
+            </div>
+            
+            <div class="nav-btns" id="navBtns">
+                <button class="btn" id="prevBtn" disabled>Atrás</button>
+                <button class="btn" id="nextBtn">Siguiente</button>
+            </div>
+
+            <div id="final-message">
+                <button class="purple-heart-btn" id="flipBtn">
+                    <span class="heart-icon">💜</span>
+                    <span>Tócame</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FINAL SCREEN TEXT -->
+    <div class="final-ending-box" id="finalEndingBox">
+        <p class="hope-text">Espero que tu deseo se cumpla ✨</p>
+        <button class="restart-btn" onclick="location.reload()">Empezar de nuevo</button>
+    </div>
+
+    <!-- AUDIO LOGIC -->
+    <script>
+        const bgMusic = document.getElementById('bgMusic');
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            const screen = document.getElementById('start-screen');
+            screen.style.opacity = '0';
+            setTimeout(() => {
+                screen.style.visibility = 'hidden';
+            }, 1500);
+
+            // Play music
+            bgMusic.volume = 0.5;
+            bgMusic.play();
+        });
+
+        // --- MYSTIC CANVAS BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let elements = [];
+        const elementCount = 120;
+        const mysticSigns = ['✧', '☾', '☼', '♈', '♋', '♓', '⚝', '✥', '✦'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class MysticElement {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speed = Math.random() * 0.4 + 0.1;
+                this.opacity = Math.random() * 0.8 + 0.1;
+                this.twinkle = Math.random() * 0.03;
+                
+                this.isSign = Math.random() > 0.85;
+                if (this.isSign) {
+                    this.sign = mysticSigns[Math.floor(Math.random() * mysticSigns.length)];
+                    this.fontSize = Math.random() * 15 + 10;
+                    this.speed *= 0.5;
+                }
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y < -30) {
+                    this.y = canvas.height + 30;
+                    this.x = Math.random() * canvas.width;
+                }
+                
+                this.opacity += this.twinkle;
+                if (this.opacity > 0.9 || this.opacity < 0.2) this.twinkle *= -1;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(212, 175, 55, ${this.opacity})`;
+                if (this.isSign) {
+                    ctx.font = `${this.fontSize}px 'Cormorant Garamond'`;
+                    ctx.fillText(this.sign, this.x, this.y);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        for (let i = 0; i < elementCount; i++) {
+            elements.push(new MysticElement());
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            elements.forEach(el => {
+                el.update();
+                el.draw();
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // --- STORY LOGIC ---
+        const story = [
+            {
+                chapter: "El Vacío",
+                text: "This story starts from nothing, right there in the dark. Way before you or I came along, there was just emptiness—the dark, the cold. Full of promise, like it was waiting to live.",
+                bg: "starfield",
+                cardState: "locked"
+            },
+            {
+                chapter: "El Despertar",
+                text: "Slowly, chunks of old, icy rocks kept tumbling down, carving edges, giving it personality. Then the rain came. Endless water. And from that water, a being woke up. The sea was born.",
+                bg: "sea",
+                cardState: "locked"
+            },
+            {
+                chapter: "La Conciencia",
+                text: "The sea turned aware. It felt itself stretching out, ruling its space, dreaming. But awareness can weigh on you. It hunted for its opposite: The anti-darkness.",
+                bg: "sea",
+                cardState: "locked"
+            },
+            {
+                chapter: "La Llamada",
+                text: "Then one day, out of nowhere, the sea feels this call. Someone reaching out. First time it hears something outside its own head. 'Hey... how you doing?'",
+                bg: "sea",
+                cardState: "locked"
+            },
+            {
+                chapter: "La Reina",
+                text: "In the shadows, a presence: The Queen of the Wind. She told him together they hold sway over existence. He realized—she's the soul he's craved. His anti-darkness.",
+                bg: "sea",
+                cardState: "locked"
+            },
+            {
+                chapter: "El Vínculo",
+                text: "They meet in stolen instants. Conversations every chance. He aches to talk daily. Till one day it hits him: Love. This queen who's an endless riddle lighting his dark.",
+                bg: "sea",
+                cardState: "locked"
+            },
+            {
+                chapter: "El Gran Regalo",
+                text: "He crafts her a gift. A massive, glowing pearl. He carries it up like his heart. She lights up too. Their shared smile births a rainbow across the sky.",
+                bg: "sun",
+                cardState: "unlocked"
+            },
+            {
+                chapter: "Luna y Sol",
+                text: "He lifts that pearl high: the Moon, to light the nights. Her gift, the Sun, marks the days. Now they've got forever to intertwine souls, swapping stories of dreams.",
+                bg: "sun",
+                cardState: "unlocked"
+            },
+            {
+                chapter: "La Amenaza",
+                text: "But something rough brews: The Earth. Scraps of the old nothing, cold remnants. It nabbed her. The King of the Earth claiming ground. Sea laughs cold: 'Let her go now.'",
+                bg: "storm",
+                cardState: "unlocked"
+            },
+            {
+                chapter: "La Batalla",
+                text: "Sea gathers speed, channels rage, but mostly that fear of loss. He crashes down—a storm of fury, drowning the Earth in his depths. Smothers it. Gone.",
+                bg: "storm",
+                cardState: "unlocked"
+            },
+            {
+                chapter: "Eternidad",
+                text: "He swears he'll never leave her alone. That's why the tide rolls in so deep—you feel her kisses in those warm breezes caressing his surface. Never apart again.",
+                bg: "starfield",
+                cardState: "unlocked"
+            }
+        ];
+
+        let currentStep = 0;
+        const storyText = document.getElementById('story-text');
+        const chapterTitle = document.getElementById('chapter-title');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const dotsContainer = document.getElementById('dots');
+        const cardInner = document.getElementById('cardInner');
+        const dynamicBg = document.getElementById('dynamic-bg');
+        const canvasEl = document.getElementById('starfield');
+        const finalMessage = document.getElementById('final-message');
+        const navBtns = document.getElementById('navBtns');
+        const flipBtn = document.getElementById('flipBtn');
+        const cardBack = document.getElementById('cardBack');
+        const cardContainer = document.getElementById('cardContainer');
+        const seedsLayer = document.getElementById('seeds-layer');
+        const finalEndingBox = document.getElementById('finalEndingBox');
+        const mainHeader = document.getElementById('mainHeader');
+        let dandelionShattered = false;
+
+        story.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dotsContainer.appendChild(dot);
+        });
+
+        function updateStory() {
+            const step = story[currentStep];
+            
+            storyText.style.opacity = '0';
+            chapterTitle.style.opacity = '0';
+            
+            setTimeout(() => {
+                storyText.innerText = step.text;
+                chapterTitle.innerText = step.chapter;
+                storyText.style.opacity = '1';
+                chapterTitle.style.opacity = '1';
+                
+                document.querySelectorAll('.dot').forEach((dot, i) => {
+                    dot.className = 'dot' + (i === currentStep ? ' active' : '');
+                });
+
+                if (step.cardState === 'locked') {
+                    cardInner.classList.add('locked');
+                } else {
+                    cardInner.classList.remove('locked');
+                }
+
+                // Update Dynamic Background
+                dynamicBg.className = ''; // Reset classes
+                
+                if (step.bg === 'starfield') {
+                    canvasEl.style.opacity = '1';
+                } else if (step.bg === 'sea') {
+                    canvasEl.style.opacity = '0.3';
+                    dynamicBg.classList.add('bg-sea');
+                } else if (step.bg === 'storm') {
+                    canvasEl.style.opacity = '0.1';
+                    dynamicBg.classList.add('bg-storm');
+                } else if (step.bg === 'sun') {
+                    canvasEl.style.opacity = '0.5';
+                    dynamicBg.classList.add('bg-sun');
+                }
+
+                prevBtn.disabled = currentStep === 0;
+                
+                if (currentStep === story.length - 1) {
+                    nextBtn.innerText = "Finalizar";
+                } else {
+                    nextBtn.innerText = "Siguiente";
+                }
+            }, 500); 
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < story.length - 1) {
+                currentStep++;
+                updateStory();
+            } else {
+                showFinal();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateStory();
+            }
+        });
+
+        function showFinal() {
+            storyText.style.display = 'none';
+            navBtns.style.display = 'none';
+            dotsContainer.style.display = 'none';
+            finalMessage.style.display = 'flex';
+        }
+
+        // --- FLIP AND DANDELION SHATTER LOGIC ---
+        flipBtn.addEventListener('click', () => {
+            document.getElementById('storyBox').style.opacity = '0';
+            setTimeout(() => document.getElementById('storyBox').style.display = 'none', 500);
+            
+            cardInner.classList.add('flipped');
+
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.inset = '0';
+            flash.style.backgroundColor = 'white';
+            flash.style.zIndex = '1000';
+            flash.style.pointerEvents = 'none';
+            flash.style.transition = 'opacity 1s ease-out';
+            document.body.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 1000);
+            }, 50);
+        });
+
+        function createSeed(x, y) {
+            const seed = document.createElement('div');
+            seed.className = 'seed';
+            seed.style.left = x + 'px';
+            seed.style.top = y + 'px';
+            seedsLayer.appendChild(seed);
+
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 200 + 100;
+            const tx = Math.cos(angle) * velocity;
+            const ty = Math.sin(angle) * velocity - 300; 
+
+            const duration = Math.random() * 2500 + 2000;
+
+            seed.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0.25, 1, 0.5, 1)'
+            });
+
+            setTimeout(() => seed.remove(), duration);
+        }
+
+        cardBack.addEventListener('click', (e) => {
+            if (dandelionShattered) return;
+            dandelionShattered = true;
+
+            cardContainer.removeEventListener('mousemove', tiltCard);
+            cardContainer.removeEventListener('mouseleave', resetTilt);
+            cardInner.style.transform = `rotateX(0deg) rotateY(180deg)`;
+
+            cardContainer.classList.add('shatter-card');
+            mainHeader.style.opacity = '0';
+
+            const rect = cardContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 120; i++) {
+                const x = centerX + (Math.random() - 0.5) * 150;
+                const y = centerY + (Math.random() - 0.5) * 200;
+                createSeed(x, y);
+            }
+
+            setTimeout(() => {
+                finalEndingBox.classList.add('show');
+            }, 2000);
+        });
+
+        // --- 3D CARD TILT EFFECT ---
+        function tiltCard(e) {
+            if(dandelionShattered) return;
+            const rect = cardContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const maxRotate = 15;
+            let rotateX = (y - centerY) / 10;
+            let rotateY = (centerX - x) / 10;
+            
+            rotateX = Math.max(-maxRotate, Math.min(maxRotate, rotateX));
+            rotateY = Math.max(-maxRotate, Math.min(maxRotate, rotateY));
+
+            cardInner.style.transform = cardInner.classList.contains('flipped') 
+                ? `rotateX(${rotateX}deg) rotateY(${180 + rotateY}deg)` 
+                : `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        }
+
+        function resetTilt() {
+            if(dandelionShattered) return;
+            cardInner.style.transform = cardInner.classList.contains('flipped') 
+                ? `rotateX(0deg) rotateY(180deg)` 
+                : `rotateX(0deg) rotateY(0deg)`;
+        }
+
+        cardContainer.addEventListener('mousemove', tiltCard);
+        cardContainer.addEventListener('mouseleave', resetTilt);
+
+        updateStory();
+    </script>
+</body>
+</html>
